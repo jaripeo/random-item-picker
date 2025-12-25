@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Item Picker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(to bottom right, #eff6ff, #e0e7ff);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 24px;
+        }
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 16px;
+            border-radius: 8px;
+        }
+        .gray-section {
+            background: #f9fafb;
+        }
+        .green-section {
+            background: #f0fdf4;
+            border: 2px solid #86efac;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        textarea {
+            resize: vertical;
+            font-family: inherit;
+        }
+        button {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-blue {
+            background: #2563eb;
+            color: white;
+        }
+        .btn-blue:hover {
+            background: #1d4ed8;
+        }
+        .btn-green {
+            background: #16a34a;
+            color: white;
+        }
+        .btn-green:hover {
+            background: #15803d;
+        }
+        .btn-indigo {
+            background: #4f46e5;
+            color: white;
+            font-size: 18px;
+            padding: 16px;
+        }
+        .btn-indigo:hover {
+            background: #4338ca;
+        }
+        .btn-indigo:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .btn-white {
+            background: white;
+            color: #4f46e5;
+            padding: 8px 16px;
+            width: auto;
+            white-space: nowrap;
+        }
+        .btn-white:hover {
+            background: #eef2ff;
+        }
+        .btn-red {
+            background: #dc2626;
+            color: white;
+            font-size: 14px;
+            width: auto;
+            padding: 8px 16px;
+        }
+        .btn-red:hover {
+            background: #b91c1c;
+        }
+        .btn-gray {
+            background: #e5e7eb;
+            color: #1f2937;
+            padding: 10px 16px;
+        }
+        .btn-gray:hover {
+            background: #d1d5db;
+        }
+        .btn-tab {
+            background: #e5e7eb;
+            color: #374151;
+            width: auto;
+            padding: 8px 16px;
+            font-size: 15px;
+        }
+        .btn-tab:hover {
+            background: #d1d5db;
+        }
+        .btn-tab.active {
+            background: #4f46e5;
+            color: white;
+        }
+        .selected-box {
+            background: linear-gradient(to right, #6366f1, #a855f7);
+            color: white;
+            padding: 24px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+        .selected-label {
+            font-size: 12px;
+            font-weight: 600;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        .selected-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .selected-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .selected-link {
+            color: white;
+            text-decoration: underline;
+            flex: 1;
+            word-break: break-all;
+        }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .item-card {
+            background: #f9fafb;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .item-card:hover {
+            background: #f3f4f6;
+        }
+        .item-content {
+            display: flex;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+        .item-number {
+            font-size: 18px;
+            font-weight: bold;
+            color: #9ca3af;
+            margin-top: 2px;
+        }
+        .item-details {
+            flex: 1;
+            min-width: 0;
+        }
+        .item-title {
+            font-weight: 500;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .item-url {
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 14px;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .item-url:hover {
+            color: #1d4ed8;
+        }
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: 16px;
+        }
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            width: auto;
+            transition: color 0.2s;
+        }
+        .icon-btn.star {
+            color: #9ca3af;
+        }
+        .icon-btn.star:hover {
+            color: #eab308;
+        }
+        .icon-btn.star.active {
+            color: #eab308;
+        }
+        .icon-btn.bookmark {
+            color: #9ca3af;
+        }
+        .icon-btn.bookmark:hover {
+            color: #3b82f6;
+        }
+        .icon-btn.bookmark.active {
+            color: #3b82f6;
+        }
+        .icon-btn.trash {
+            color: #ef4444;
+        }
+        .icon-btn.trash:hover {
+            color: #b91c1c;
+        }
+        .icon-small {
+            width: 16px;
+            height: 16px;
+        }
+        .icon-yellow {
+            color: #eab308;
+        }
+        .icon-blue {
+            color: #3b82f6;
+        }
+        .empty-state {
+            text-align: center;
+            color: #6b7280;
+            padding: 40px 20px;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: white;
+            border-radius: 8px;
+            padding: 32px;
+            max-width: 400px;
+            margin: 16px;
+            box-shadow: 0 20px 25px rgba(0,0,0,0.2);
+        }
+        .modal-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #dc2626;
+            margin-bottom: 16px;
+        }
+        .modal-text {
+            color: #374151;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .modal-buttons button {
+            flex: 1;
+        }
+        .hint-text {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            .header-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .tabs {
+                flex-direction: column;
+            }
+            .item-actions {
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script>
+        // App State
+        let state = {
+            links: [],
+            selectedLink: null,
+            activeTab: 'all',
+            showDeleteConfirm: false,
+            copied: false
+        };
+
+        // Load data from localStorage
+        function loadData() {
+            try {
+                const saved = localStorage.getItem('random-items');
+                if (saved) {
+                    state.links = JSON.parse(saved);
+                }
+            } catch (e) {
+                console.log('No saved data found');
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            try {
+                localStorage.setItem('random-items', JSON.stringify(state.links));
+            } catch (e) {
+                console.error('Failed to save data', e);
+            }
+        }
+
+        // Add single item
+        function addItem() {
+            const urlInput = document.getElementById('newUrl');
+            const titleInput = document.getElementById('newTitle');
+            
+            if (urlInput.value.trim()) {
+                const newUrl = urlInput.value.trim();
+                const newTitle = titleInput.value.trim() || newUrl;
+                
+                // Check if item already exists
+                const exists = state.links.some(link => link.url === newUrl);
+                
+                if (!exists) {
+                    state.links.push({
+                        id: Date.now(),
+                        url: newUrl,
+                        title: newTitle,
+                        starred: false,
+                        bookmarked: false
+                    });
+                    
+                    urlInput.value = '';
+                    titleInput.value = '';
+                    saveData();
+                    render();
+                } else {
+                    alert('This item already exists in your list!');
+                }
+            }
+        }
+
+        // Bulk add items
+        function bulkAdd() {
+            const textarea = document.getElementById('bulkItems');
+            const lines = textarea.value.split('\n');
+            let addedCount = 0;
+            let skippedCount = 0;
+            
+            lines.forEach((line, index) => {
+                const trimmed = line.trim();
+                // Only add if there's actual content after trimming
+                if (trimmed && trimmed.length > 0) {
+                    // Check if item already exists
+                    const exists = state.links.some(link => link.url === trimmed);
+                    
+                    if (!exists) {
+                        state.links.push({
+                            id: Date.now() + index + Math.random(),
+                            url: trimmed,
+                            title: trimmed,
+                            starred: false,
+                            bookmarked: false
+                        });
+                        addedCount++;
+                    } else {
+                        skippedCount++;
+                    }
+                }
+            });
+            
+            textarea.value = '';
+            saveData();
+            render();
+            
+            // Show feedback
+            if (skippedCount > 0) {
+                alert(`Added ${addedCount} new items. Skipped ${skippedCount} duplicate(s).`);
+            }
+        }
+
+        // Random pick
+        function randomPick() {
+            if (state.links.length > 0) {
+                const randomIndex = Math.floor(Math.random() * state.links.length);
+                state.selectedLink = state.links[randomIndex];
+                state.copied = false;
+                render();
+            }
+        }
+
+        // Copy link
+        function copyLink() {
+            if (state.selectedLink) {
+                navigator.clipboard.writeText(state.selectedLink.url);
+                state.copied = true;
+                render();
+                setTimeout(() => {
+                    state.copied = false;
+                    render();
+                }, 2000);
+            }
+        }
+
+        // Toggle star
+        function toggleStar(id) {
+            const link = state.links.find(l => l.id === id);
+            if (link) {
+                link.starred = !link.starred;
+                saveData();
+                render();
+            }
+        }
+
+        // Toggle bookmark
+        function toggleBookmark(id) {
+            const link = state.links.find(l => l.id === id);
+            if (link) {
+                link.bookmarked = !link.bookmarked;
+                saveData();
+                render();
+            }
+        }
+
+        // Remove item
+        function removeItem(id) {
+            state.links = state.links.filter(l => l.id !== id);
+            if (state.selectedLink && state.selectedLink.id === id) {
+                state.selectedLink = null;
+            }
+            saveData();
+            render();
+        }
+
+        // Delete all
+        function showDeleteConfirm() {
+            state.showDeleteConfirm = true;
+            render();
+        }
+
+        function confirmDeleteAll() {
+            state.links = [];
+            state.showDeleteConfirm = false;
+            state.selectedLink = null;
+            saveData();
+            render();
+        }
+
+        function cancelDelete() {
+            state.showDeleteConfirm = false;
+            render();
+        }
+
+        // Change tab
+        function setTab(tab) {
+            state.activeTab = tab;
+            render();
+        }
+
+        // Get displayed items
+        function getDisplayedLinks() {
+            if (state.activeTab === 'starred') {
+                return state.links.filter(l => l.starred);
+            } else if (state.activeTab === 'bookmarked') {
+                return state.links.filter(l => l.bookmarked);
+            }
+            return state.links;
+        }
+
+        // SVG Icons
+        const icons = {
+            star: (filled) => `<svg width="20" height="20" viewBox="0 0 24 24" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`,
+            bookmark: (filled) => `<svg width="20" height="20" viewBox="0 0 24 24" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`,
+            trash: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`,
+            plus: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
+            shuffle: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>`,
+            copy: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
+            check: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+        };
+
+        // Render function
+        function render() {
+            const displayedLinks = getDisplayedLinks();
+            const starredCount = state.links.filter(l => l.starred).length;
+            const bookmarkedCount = state.links.filter(l => l.bookmarked).length;
+
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                ${state.showDeleteConfirm ? `
+                    <div class="modal-overlay">
+                        <div class="modal">
+                            <h3 class="modal-title">⚠️ Delete All Items?</h3>
+                            <p class="modal-text">
+                                This will permanently delete <strong>all ${state.links.length} items</strong>, including their stars and bookmarks. 
+                                This action cannot be undone!
+                            </p>
+                            <div class="modal-buttons">
+                                <button onclick="cancelDelete()" class="btn-gray">Cancel</button>
+                                <button onclick="confirmDeleteAll()" class="btn-red">Delete All</button>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div class="container">
+                    <h1>Random Item Picker</h1>
+                    
+                    <!-- Add New Item -->
+                    <div class="section gray-section">
+                        <h2>Add New Item</h2>
+                        <input type="text" id="newUrl" placeholder="Enter URL (e.g., https://example.com)" onkeypress="if(event.key==='Enter') addItem()">
+                        <input type="text" id="newTitle" placeholder="Enter title (optional)" onkeypress="if(event.key==='Enter') addItem()">
+                        <button onclick="addItem()" class="btn-blue">
+                            ${icons.plus}
+                            Add Item
+                        </button>
+                    </div>
+
+                    <!-- Bulk Add -->
+                    <div class="section green-section">
+                        <h2>Paste Multiple Items</h2>
+                        <p class="hint-text">Paste a list of items (one per line). We'll automatically add them all.</p>
+                        <textarea id="bulkItems" placeholder="Paste your items here...
+https://example.com
+https://github.com
+https://google.com" rows="6"></textarea>
+                        <button onclick="bulkAdd()" class="btn-green">
+                            ${icons.plus}
+                            Add All Items
+                        </button>
+                    </div>
+
+                    <!-- Random Pick Button -->
+                    <button onclick="randomPick()" ${state.links.length === 0 ? 'disabled' : ''} class="btn-indigo">
+                        ${icons.shuffle}
+                        Pick Random Item
+                    </button>
+
+                    <!-- Selected Item -->
+                    ${state.selectedLink ? `
+                        <div class="selected-box">
+                            <div class="selected-label">SELECTED ITEM:</div>
+                            <div class="selected-title">${state.selectedLink.title}</div>
+                            <div class="selected-content">
+                                <a href="${state.selectedLink.url}" target="_blank" class="selected-link">${state.selectedLink.url}</a>
+                                <button onclick="copyLink()" class="btn-white">
+                                    ${state.copied ? icons.check : icons.copy}
+                                    ${state.copied ? 'Copied!' : 'Copy'}
+                                </button>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- Items List -->
+                    <div>
+                        <div class="header-row">
+                            <h2>
+                                ${state.activeTab === 'all' ? `Your Items (${state.links.length})` : 
+                                  state.activeTab === 'starred' ? `Starred Items (${starredCount})` : 
+                                  `Bookmarked Items (${bookmarkedCount})`}
+                            </h2>
+                            <div class="tabs">
+                                <button onclick="setTab('all')" class="btn-tab ${state.activeTab === 'all' ? 'active' : ''}">
+                                    All Items
+                                </button>
+                                <button onclick="setTab('starred')" class="btn-tab ${state.activeTab === 'starred' ? 'active' : ''}">
+                                    ${icons.star(state.activeTab === 'starred')}
+                                    Starred
+                                </button>
+                                <button onclick="setTab('bookmarked')" class="btn-tab ${state.activeTab === 'bookmarked' ? 'active' : ''}">
+                                    ${icons.bookmark(state.activeTab === 'bookmarked')}
+                                    Bookmarked
+                                </button>
+                            </div>
+                        </div>
+
+                        ${state.links.length > 0 ? `
+                            <div style="margin-bottom: 12px; text-align: right;">
+                                <button onclick="showDeleteConfirm()" class="btn-red">
+                                    ${icons.trash}
+                                    Delete All Items
+                                </button>
+                            </div>
+                        ` : ''}
+
+                        ${displayedLinks.length === 0 ? `
+                            <div class="empty-state">
+                                ${state.activeTab === 'starred' ? 'No starred items yet. Star some items to see them here!' : 
+                                  state.activeTab === 'bookmarked' ? 'No bookmarked items yet. Bookmark some items to see them here!' : 
+                                  'No items yet. Add some above!'}
+                            </div>
+                        ` : `
+                            <div>
+                                ${displayedLinks.map((link, index) => {
+                                    const actualIndex = state.links.findIndex(l => l.id === link.id);
+                                    return `
+                                        <div class="item-card">
+                                            <div class="item-content">
+                                                <div class="item-number">${state.activeTab === 'all' ? index + 1 : actualIndex + 1}.</div>
+                                                <div class="item-details">
+                                                    <div class="item-title">
+                                                        ${link.title}
+                                                        ${link.starred ? `<span class="icon-small icon-yellow">${icons.star(true)}</span>` : ''}
+                                                        ${link.bookmarked ? `<span class="icon-small icon-blue">${icons.bookmark(true)}</span>` : ''}
+                                                    </div>
+                                                    <a href="${link.url}" target="_blank" class="item-url">${link.url}</a>
+                                                </div>
+                                            </div>
+                                            <div class="item-actions">
+                                                <button onclick="toggleStar(${link.id})" class="icon-btn star ${link.starred ? 'active' : ''}" title="Star">
+                                                    ${icons.star(link.starred)}
+                                                </button>
+                                                <button onclick="toggleBookmark(${link.id})" class="icon-btn bookmark ${link.bookmarked ? 'active' : ''}" title="Bookmark">
+                                                    ${icons.bookmark(link.bookmarked)}
+                                                </button>
+                                                <button onclick="removeItem(${link.id})" class="icon-btn trash" title="Delete">
+                                                    ${icons.trash}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize
+        window.onload = function() {
+            loadData();
+            render();
+        };
+    </script>
+</body>
+</html>
