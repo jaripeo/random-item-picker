@@ -81,9 +81,18 @@
 
         .search-box {
             margin-bottom: 16px;
+            display: flex;
+            gap: 8px;
         }
 
         .search-input {
+            margin-bottom: 0;
+            flex: 1;
+        }
+
+        .search-btn {
+            width: auto;
+            padding: 10px 20px;
             margin-bottom: 0;
         }
 
@@ -598,21 +607,24 @@
         }
 
         // Search functionality
-        function updateSearch() {
+        function performSearch() {
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 state.searchQuery = searchInput.value.toLowerCase();
-                const cursorPosition = searchInput.selectionStart;
                 render();
-                // Restore focus and cursor position
-                setTimeout(() => {
-                    const newSearchInput = document.getElementById('searchInput');
-                    if (newSearchInput) {
-                        newSearchInput.focus();
-                        newSearchInput.setSelectionRange(cursorPosition, cursorPosition);
-                    }
-                }, 0);
             }
+        }
+        
+        function clearSearch() {
+            state.searchQuery = '';
+            render();
+            // Focus back on search input after clearing
+            setTimeout(() => {
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }, 0);
         }
 
         // Jump to item by number
@@ -1037,7 +1049,12 @@ https://google.com" rows="6"></textarea>
                         <!-- Search Bar -->
                         ${currentLinks.length > 0 ? `
                             <div class="search-box">
-                                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search items..." value="${state.searchQuery}" oninput="updateSearch()">
+                                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search items..." value="${state.searchQuery}" onkeypress="if(event.key==='Enter') performSearch()">
+                                ${state.searchQuery ? `
+                                    <button onclick="clearSearch()" class="btn-gray search-btn">Clear</button>
+                                ` : `
+                                    <button onclick="performSearch()" class="btn-blue search-btn">Search</button>
+                                `}
                             </div>
                         ` : ''}
 
