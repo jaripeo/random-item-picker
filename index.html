@@ -79,6 +79,14 @@
             font-family: inherit;
         }
 
+        .search-box {
+            margin-bottom: 16px;
+        }
+
+        .search-input {
+            margin-bottom: 0;
+        }
+
         button {
             width: 100%;
             padding: 12px 16px;
@@ -269,6 +277,11 @@
             background: #f3f4f6;
         }
 
+        .item-card.highlight {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+        }
+
         .item-content {
             display: flex;
             gap: 12px;
@@ -348,6 +361,18 @@
 
         .icon-btn.bookmark.active {
             color: #3b82f6;
+        }
+
+        .icon-btn.copy {
+            color: #9ca3af;
+        }
+
+        .icon-btn.copy:hover {
+            color: #10b981;
+        }
+
+        .icon-btn.copy.active {
+            color: #10b981;
         }
 
         .icon-btn.trash {
@@ -439,6 +464,50 @@
             margin-bottom: 12px;
         }
 
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #4f46e5;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            transition: all 0.3s;
+            border: none;
+            padding: 0;
+        }
+
+        .back-to-top:hover {
+            background: #4338ca;
+            transform: translateY(-3px);
+        }
+
+        .jump-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .jump-input {
+            width: 120px;
+            margin-bottom: 0;
+            padding: 8px 12px;
+        }
+
+        .jump-btn {
+            width: auto;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
         @media (max-width: 640px) {
             .container {
                 padding: 20px;
@@ -477,13 +546,16 @@
             activeTab: 'all',
             showDeleteConfirm: false,
             copied: false,
+            copiedItemId: null,
             isPrivateMode: false,
             isPrivateLocked: true,
             showPinPrompt: false,
-            currentList: 'public' // 'public' or 'private'
+            currentList: 'public',
+            searchQuery: '',
+            showBackToTop: false
         };
 
-        const PRIVATE_PIN = '8510'; // Default PIN - you can change this
+        const PRIVATE_PIN = '8510';
 
         // Load data from localStorage
         function loadData() {
@@ -522,6 +594,67 @@
                 state.privateLinks = newLinks;
             } else {
                 state.links = newLinks;
+            }
+        }
+
+        // Search functionality
+        function updateSearch() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                state.searchQuery = searchInput.value.toLowerCase();
+                const cursorPosition = searchInput.selectionStart;
+                render();
+                // Restore focus and cursor position
+                setTimeout(() => {
+                    const newSearchInput = document.getElementById('searchInput');
+                    if (newSearchInput) {
+                        newSearchInput.focus();
+                        newSearchInput.setSelectionRange(cursorPosition, cursorPosition);
+                    }
+                }, 0);
+            }
+        }
+
+        // Jump to item by number
+        function jumpToItem() {
+            const jumpInput = document.getElementById('jumpInput');
+            if (jumpInput) {
+                const itemNum = parseInt(jumpInput.value);
+                const currentLinks = getCurrentLinks();
+                
+                if (itemNum >= 1 && itemNum <= currentLinks.length) {
+                    const targetItem = document.getElementById(`item-${currentLinks[itemNum - 1].id}`);
+                    if (targetItem) {
+                        targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Highlight the item temporarily
+                        targetItem.classList.add('highlight');
+                        setTimeout(() => {
+                            targetItem.classList.remove('highlight');
+                        }, 2000);
+                    }
+                } else {
+                    alert(`Please enter a number between 1 and ${currentLinks.length}`);
+                }
+                jumpInput.value = '';
+            }
+        }
+
+        // Scroll to top
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Scroll to bottom
+        function scrollToBottom() {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        // Detect scroll for back to top button
+        function handleScroll() {
+            state.showBackToTop = window.scrollY > 300;
+            const btn = document.getElementById('backToTopBtn');
+            if (btn) {
+                btn.style.display = state.showBackToTop ? 'flex' : 'none';
             }
         }
 
@@ -643,7 +776,7 @@
             }
         }
 
-        // Copy link
+        // Copy link from selected box
         function copyLink() {
             if (state.selectedLink) {
                 navigator.clipboard.writeText(state.selectedLink.url);
@@ -654,6 +787,17 @@
                     render();
                 }, 2000);
             }
+        }
+
+        // Copy individual item
+        function copyItem(id, url) {
+            navigator.clipboard.writeText(url);
+            state.copiedItemId = id;
+            render();
+            setTimeout(() => {
+                state.copiedItemId = null;
+                render();
+            }, 2000);
         }
 
         // Toggle star
@@ -721,15 +865,27 @@
             render();
         }
 
-        // Get displayed items
+        // Get displayed items with search filter
         function getDisplayedLinks() {
             const currentLinks = getCurrentLinks();
+            let filtered = currentLinks;
+
+            // Apply tab filter
             if (state.activeTab === 'starred') {
-                return currentLinks.filter(l => l.starred);
+                filtered = currentLinks.filter(l => l.starred);
             } else if (state.activeTab === 'bookmarked') {
-                return currentLinks.filter(l => l.bookmarked);
+                filtered = currentLinks.filter(l => l.bookmarked);
             }
-            return currentLinks;
+
+            // Apply search filter
+            if (state.searchQuery) {
+                filtered = filtered.filter(link =>
+                    link.title.toLowerCase().includes(state.searchQuery) ||
+                    link.url.toLowerCase().includes(state.searchQuery)
+                );
+            }
+
+            return filtered;
         }
 
         // SVG Icons
@@ -741,7 +897,10 @@
             shuffle: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>`,
             copy: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
             check: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
-            lock: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`
+            lock: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`,
+            search: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>`,
+            arrowUp: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`,
+            arrowDown: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>`
         };
 
         // Render function
@@ -753,6 +912,11 @@
 
             const app = document.getElementById('app');
             app.innerHTML = `
+                <!-- Back to Top Button -->
+                <button id="backToTopBtn" class="back-to-top" onclick="scrollToTop()" style="display: none;">
+                    ${icons.arrowUp}
+                </button>
+
                 ${state.showPinPrompt ? `
                     <div class="modal-overlay">
                         <div class="modal">
@@ -870,6 +1034,23 @@ https://google.com" rows="6"></textarea>
                             </div>
                         </div>
 
+                        <!-- Search Bar -->
+                        ${currentLinks.length > 0 ? `
+                            <div class="search-box">
+                                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search items..." value="${state.searchQuery}" oninput="updateSearch()">
+                            </div>
+                        ` : ''}
+
+                        <!-- Jump Controls -->
+                        ${currentLinks.length > 5 && !state.searchQuery ? `
+                            <div class="jump-controls">
+                                <input type="number" id="jumpInput" class="jump-input" placeholder="Go to #" min="1" max="${currentLinks.length}" onkeypress="if(event.key==='Enter') jumpToItem()">
+                                <button onclick="jumpToItem()" class="btn-gray jump-btn">Jump</button>
+                                <button onclick="scrollToTop()" class="btn-gray jump-btn">⬆ Top</button>
+                                <button onclick="scrollToBottom()" class="btn-gray jump-btn">⬇ Bottom</button>
+                            </div>
+                        ` : ''}
+
                         ${currentLinks.length > 0 ? `
                             <div style="margin-bottom: 12px; text-align: right;">
                                 <button onclick="showDeleteConfirm()" class="btn-red">
@@ -879,7 +1060,11 @@ https://google.com" rows="6"></textarea>
                             </div>
                         ` : ''}
 
-                        ${displayedLinks.length === 0 ? `
+                        ${displayedLinks.length === 0 && state.searchQuery ? `
+                            <div class="empty-state">
+                                No items found matching "${state.searchQuery}"
+                            </div>
+                        ` : displayedLinks.length === 0 ? `
                             <div class="empty-state">
                                 ${state.activeTab === 'starred' ? 'No starred items yet. Star some items to see them here!' :
                         state.activeTab === 'bookmarked' ? 'No bookmarked items yet. Bookmark some items to see them here!' :
@@ -889,10 +1074,11 @@ https://google.com" rows="6"></textarea>
                             <div>
                                 ${displayedLinks.map((link, index) => {
                                 const actualIndex = currentLinks.findIndex(l => l.id === link.id);
+                                const isCopied = state.copiedItemId === link.id;
                                 return `
-                                        <div class="item-card">
+                                        <div id="item-${link.id}" class="item-card ${state.searchQuery && (link.title.toLowerCase().includes(state.searchQuery) || link.url.toLowerCase().includes(state.searchQuery)) ? 'highlight' : ''}">
                                             <div class="item-content">
-                                                <div class="item-number">${state.activeTab === 'all' ? index + 1 : actualIndex + 1}.</div>
+                                                <div class="item-number">${state.activeTab === 'all' && !state.searchQuery ? index + 1 : actualIndex + 1}.</div>
                                                 <div class="item-details">
                                                     <div class="item-title">
                                                         ${link.title}
@@ -903,6 +1089,9 @@ https://google.com" rows="6"></textarea>
                                                 </div>
                                             </div>
                                             <div class="item-actions">
+                                                <button onclick="copyItem(${link.id}, '${link.url.replace(/'/g, "\\'")}')  " class="icon-btn copy ${isCopied ? 'active' : ''}" title="Copy URL">
+                                                    ${isCopied ? icons.check : icons.copy}
+                                                </button>
                                                 <button onclick="toggleStar(${link.id})" class="icon-btn star ${link.starred ? 'active' : ''}" title="Star">
                                                     ${icons.star(link.starred)}
                                                 </button>
@@ -927,6 +1116,8 @@ https://google.com" rows="6"></textarea>
         window.onload = function () {
             loadData();
             render();
+            // Add scroll listener for back to top button
+            window.addEventListener('scroll', handleScroll);
         };
     </script>
 </body>
