@@ -169,6 +169,61 @@
             background: #6d28d9;
         }
 
+        .export-import-section {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .export-import-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-yellow {
+            background: #eab308;
+            color: white;
+            font-size: 14px;
+            width: auto;
+            padding: 8px 16px;
+        }
+
+        .btn-yellow:hover {
+            background: #ca8a04;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .import-label {
+            background: #10b981;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .import-label:hover {
+            background: #059669;
+        }
+
         .lock-icon {
             width: 20px;
             height: 20px;
@@ -706,6 +761,94 @@
             render();
         }
 
+        // Export data
+        function exportData() {
+            const currentLinks = getCurrentLinks();
+            const listType = state.currentList;
+            const dataStr = JSON.stringify(currentLinks, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `item-picker-${listType}-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            alert(`Exported ${currentLinks.length} items from ${listType} list!`);
+        }
+
+        // Import data
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Validate data structure
+                    if (!Array.isArray(importedData)) {
+                        throw new Error('Invalid file format');
+                    }
+
+                    // Check if user wants to replace or merge
+                    const currentLinks = getCurrentLinks();
+                    let confirmMsg = '';
+                    
+                    if (currentLinks.length > 0) {
+                        confirmMsg = `You currently have ${currentLinks.length} items in your ${state.currentList} list.\n\nChoose:\nOK = REPLACE all items with imported data (${importedData.length} items)\nCancel = MERGE imported data with existing items`;
+                        
+                        if (confirm(confirmMsg)) {
+                            // Replace
+                            setCurrentLinks(importedData);
+                        } else {
+                            // Merge - add only non-duplicate URLs
+                            let addedCount = 0;
+                            importedData.forEach(item => {
+                                const exists = currentLinks.some(link => link.url === item.url);
+                                if (!exists) {
+                                    currentLinks.push({
+                                        ...item,
+                                        id: Date.now() + Math.random()
+                                    });
+                                    addedCount++;
+                                }
+                            });
+                            setCurrentLinks(currentLinks);
+                            alert(`Merged! Added ${addedCount} new items. Skipped ${importedData.length - addedCount} duplicates.`);
+                        }
+                    } else {
+                        // No existing items, just import
+                        setCurrentLinks(importedData);
+                        alert(`Imported ${importedData.length} items successfully!`);
+                    }
+                    
+                    saveData();
+                    render();
+                } catch (error) {
+                    alert('Error importing file: Invalid format. Please select a valid backup file.');
+                    console.error('Import error:', error);
+                }
+            };
+            reader.readAsText(file);
+            // Reset input so same file can be imported again
+            event.target.value = '';
+        }
+
+        // Copy data to clipboard
+        function copyDataToClipboard() {
+            const currentLinks = getCurrentLinks();
+            const dataStr = JSON.stringify(currentLinks, null, 2);
+            navigator.clipboard.writeText(dataStr).then(() => {
+                alert(`Copied ${currentLinks.length} items to clipboard! You can now paste this data on another device.`);
+            }).catch(err => {
+                alert('Failed to copy to clipboard. Please use Export button instead.');
+                console.error('Copy error:', err);
+            });
+        }
+
         // Add single item
         function addItem() {
             const urlInput = document.getElementById('newUrl');
@@ -912,7 +1055,9 @@
             lock: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`,
             search: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>`,
             arrowUp: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`,
-            arrowDown: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>`
+            upload: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>`,
+            download: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
+            clipboard: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>`
         };
 
         // Render function
@@ -976,6 +1121,29 @@
                             </button>
                         </div>
                     `}
+
+                    <!-- Export/Import Section -->
+                    <div class="export-import-section">
+                        <h2>📦 Backup & Transfer Data</h2>
+                        <p class="hint-text">Export your ${state.currentList} list to transfer to another device. All items, stars, and bookmarks are preserved!</p>
+                        <div class="export-import-buttons">
+                            <button onclick="exportData()" class="btn-yellow">
+                                ${icons.download}
+                                Download Backup
+                            </button>
+                            <button onclick="copyDataToClipboard()" class="btn-yellow">
+                                ${icons.clipboard}
+                                Copy to Clipboard
+                            </button>
+                            <div class="file-input-wrapper">
+                                <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+                                <label for="importFile" class="import-label">
+                                    ${icons.upload}
+                                    Upload Backup
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Add New Item -->
                     <div class="section gray-section">
